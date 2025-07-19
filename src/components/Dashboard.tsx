@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/utils/supabase/client'
+import { User, Mail, FileText, Edit2, Save, X, Calendar, LogOut } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -87,38 +88,41 @@ export function Dashboard() {
     await signOut()
   }
 
-  if (loading) {
+if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-[#FDF6E3] flex items-center justify-center">
+        <div className="bg-white border-2 border-black rounded-2xl p-8 shadow-[8px_8px_0px_0px_#000]">
+          <div className="text-2xl font-bold text-black text-center">Loading...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
+    <div className="min-h-screen bg-[#FDF6E3] p-4">
+      <div className="bg-white border-2 border-black rounded-2xl shadow-[8px_8px_0px_0px_#000] mb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
+<div className="h-12 w-12 rounded-full bg-orange-500 border-2 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_#000]">
                   <span className="text-white font-medium">
                     {profile?.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+<h1 className="text-3xl font-bold text-black">
                   Welcome, {profile?.name || 'User'}!
                 </h1>
-                <p className="text-sm text-gray-600">{user?.email}</p>
+<p className="text-sm text-black">{user?.email}</p>
               </div>
             </div>
-            <button
+<button
               onClick={handleSignOut}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className="bg-orange-500 text-white font-bold py-3 px-4 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-orange-600 transition-all transform active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_0px_#000]"
             >
+              <LogOut size={20} className="mr-2 transform group-hover:translate-x-1 transition-transform" />
               Sign Out
             </button>
           </div>
@@ -129,15 +133,16 @@ export function Dashboard() {
         <div className="px-4 py-6 sm:px-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Profile Section */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
+<div className="bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[8px_8px_0px_0px_#000]">
               <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+<div className="inline-block px-4 py-2 border-2 border-black rounded-full bg-white font-bold text-lg mb-4 shadow-[4px_4px_0px_0px_#000]">
+                  <User size={20} className="inline mr-2" />
                   Profile Information
-                </h3>
+                </div>
                 {editingProfile ? (
                   <form onSubmit={handleUpdateProfile} className="space-y-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+<label htmlFor="name" className="block text-sm font-medium text-black">
                         Name
                       </label>
                       <input
@@ -145,21 +150,23 @@ export function Dashboard() {
                         id="name"
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        className="mt-1 block w-full border-2 border-black rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
                       />
                     </div>
                     <div className="flex space-x-3">
-                      <button
+<button
                         type="submit"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg border-2 border-black flex items-center justify-center group transition-all transform active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_0px_#000]"
                       >
+                        <Save size={16} className="mr-2 transform group-hover:translate-x-1 transition-transform" />
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingProfile(false)}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm font-medium"
+                        className="bg-gray-300 hover:bg-gray-400 text-black font-bold px-4 py-2 rounded-lg border-2 border-black flex items-center justify-center group transition-all transform active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_0px_#000]"
                       >
+                        <X size={16} className="mr-2 transform group-hover:translate-x-1 transition-transform" />
                         Cancel
                       </button>
                     </div>
@@ -167,17 +174,18 @@ export function Dashboard() {
                 ) : (
                   <div className="space-y-3">
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Name</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{profile?.name || 'Not set'}</dd>
+<dt className="text-sm font-medium text-black flex items-center"><User size={16} className="mr-2" />Name</dt>
+                      <dd className="mt-1 text-sm text-black font-bold">{profile?.name || 'Not set'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Email</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{user?.email}</dd>
+<dt className="text-sm font-medium text-black flex items-center"><Mail size={16} className="mr-2" />Email</dt>
+                      <dd className="mt-1 text-sm text-black font-bold">{user?.email}</dd>
                     </div>
-                    <button
+<button
                       onClick={() => setEditingProfile(true)}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                      className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg border-2 border-black flex items-center justify-center group transition-all transform active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_0px_#000]"
                     >
+                      <Edit2 size={16} className="mr-2 transform group-hover:translate-x-1 transition-transform" />
                       Edit Profile
                     </button>
                   </div>
@@ -186,33 +194,36 @@ export function Dashboard() {
             </div>
 
             {/* Resumes Section */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
+<div className="bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[8px_8px_0px_0px_#000]">
               <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                <div className="inline-block px-4 py-2 border-2 border-black rounded-full bg-white font-bold text-lg mb-4 shadow-[4px_4px_0px_0px_#000]">
+                  <FileText size={20} className="inline mr-2" />
                   My Resumes ({resumes.length})
-                </h3>
+                </div>
                 {resumes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No resumes yet.</p>
-                    <p className="text-sm text-gray-400 mt-2">
+<div className="text-center py-8">
+                    <p className="text-black font-bold">No resumes yet.</p>
+                    <p className="text-sm text-black mt-2">
                       Upload your first resume to get started!
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {resumes.map((resume) => (
-                      <div key={resume.id} className="border border-gray-200 rounded-md p-3">
+<div key={resume.id} className="border-2 border-black rounded-lg p-4 bg-white shadow-[4px_4px_0px_0px_#000]">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900">
+                            <h4 className="text-sm font-bold text-black flex items-center">
+                              <FileText size={16} className="mr-2" />
                               {resume.original_file_name}
                             </h4>
                             {resume.enhanced_file_name && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-black font-medium mt-1">
                                 Enhanced: {resume.enhanced_file_name}
                               </p>
                             )}
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-black mt-2 flex items-center">
+                              <Calendar size={14} className="mr-1" />
                               {new Date(resume.created_at).toLocaleDateString()}
                             </p>
                           </div>
@@ -224,6 +235,13 @@ export function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <div className="text-center mt-4">
+        <div className="inline-block px-4 py-1 border-2 border-black rounded-full bg-white font-semibold text-sm shadow-[2px_2px_0px_0px_#000]">
+          2025
         </div>
       </div>
     </div>
