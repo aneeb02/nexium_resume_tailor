@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             name: name || '',
           },
@@ -56,12 +57,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
+        console.error('Sign up error:', error)
         return { error }
       }
 
+      console.log('Sign up successful:', data)
       // Profile is automatically created by the database trigger
-      return { error: null }
+      return { error: null, data }
     } catch (error) {
+      console.error('Sign up catch error:', error)
       return { error }
     }
   }
@@ -111,16 +115,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: 'No user found' }
       }
 
-      const { error } = await supabase
+      // First try to update the profile
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           name,
           avatar_url: avatarUrl || '',
+          updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
 
-      return { error }
+      // If the update failed because the profile doesn't exist, create it
+      if (updateError && updateError.code === 'PGRST116') {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            name,
+            avatar_url: avatarUrl || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        
+        return { error: insertError }
+      }
+
+      return { error: updateError }
     } catch (error) {
+      console.error('Profile update error:', error)
       return { error }
     }
   }

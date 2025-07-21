@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/utils/supabase/client'
-import { User, Mail, FileText, Edit2, Save, X, Calendar, LogOut } from 'lucide-react'
+import { ResumeUpload } from './ResumeUpload'
+import { User, Mail, FileText, Edit2, Save, X, Calendar, LogOut, Upload, Download } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -13,9 +14,15 @@ interface Profile {
 
 interface Resume {
   id: number
+  user_id: string
   original_file_name: string
-  enhanced_file_name: string
-  job_description: string
+  enhanced_file_name?: string
+  storage_path: string
+  file_url: string
+  file_size: number
+  file_type: string
+  job_description?: string
+  status: string
   created_at: string
 }
 
@@ -26,6 +33,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [editingProfile, setEditingProfile] = useState(false)
   const [newName, setNewName] = useState('')
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -42,6 +50,25 @@ export function Dashboard() {
 
         if (profileError) {
           console.error('Error fetching profile:', profileError)
+          // If profile doesn't exist, create a default one
+          if (profileError.code === 'PGRST116') {
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                avatar_url: user.user_metadata?.avatar_url || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select()
+              .single()
+            
+            if (!createError && newProfile) {
+              setProfile(newProfile)
+              setNewName(newProfile.name || '')
+            }
+          }
         } else {
           setProfile(profileData)
           setNewName(profileData.name || '')
@@ -86,6 +113,11 @@ export function Dashboard() {
 
   const handleSignOut = async () => {
     await signOut()
+  }
+
+  const handleUploadSuccess = (newResume: Resume) => {
+    setResumes(prev => [newResume, ...prev])
+    setShowUploadModal(false)
   }
 
 if (loading) {
@@ -196,16 +228,32 @@ if (loading) {
             {/* Resumes Section */}
 <div className="bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[8px_8px_0px_0px_#000]">
               <div className="px-4 py-5 sm:p-6">
-                <div className="inline-block px-4 py-2 border-2 border-black rounded-full bg-white font-bold text-lg mb-4 shadow-[4px_4px_0px_0px_#000]">
-                  <FileText size={20} className="inline mr-2" />
-                  My Resumes ({resumes.length})
+                <div className="flex justify-between items-center mb-4">
+                  <div className="inline-block px-4 py-2 border-2 border-black rounded-full bg-white font-bold text-lg shadow-[4px_4px_0px_0px_#000]">
+                    <FileText size={20} className="inline mr-2" />
+                    My Resumes ({resumes.length})
+                  </div>
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="bg-orange-500 text-white font-bold py-2 px-4 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-orange-600 transition-all transform active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_0px_#000]"
+                  >
+                    <Upload size={16} className="mr-2 transform group-hover:translate-x-1 transition-transform" />
+                    Upload Resume
+                  </button>
                 </div>
                 {resumes.length === 0 ? (
 <div className="text-center py-8">
                     <p className="text-black font-bold">No resumes yet.</p>
-                    <p className="text-sm text-black mt-2">
+                    <p className="text-sm text-black mt-2 mb-4">
                       Upload your first resume to get started!
                     </p>
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      className="bg-orange-500 text-white font-bold py-2 px-4 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-orange-600 transition-all transform active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_0px_#000] mx-auto"
+                    >
+                      <Upload size={16} className="mr-2 transform group-hover:translate-x-1 transition-transform" />
+                      Upload Your First Resume
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -214,11 +262,21 @@ if (loading) {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h4 className="text-sm font-bold text-black flex items-center">
-                              <FileText size={16} className="mr-2" />
+                              <FileText size={16} className="mr-2 text-orange-500" />
                               {resume.original_file_name}
                             </h4>
+                            <div className="mt-1 space-y-1">
+                              <p className="text-xs text-gray-600">
+                                {(resume.file_size / 1024 / 1024).toFixed(2)} MB • {resume.file_type.includes('pdf') ? 'PDF' : 'DOCX'} • {resume.status}
+                              </p>
+                              {resume.job_description && (
+                                <p className="text-xs text-gray-600">
+                                  Job description: {resume.job_description.substring(0, 100)}{resume.job_description.length > 100 ? '...' : ''}
+                                </p>
+                              )}
+                            </div>
                             {resume.enhanced_file_name && (
-                              <p className="text-sm text-black font-medium mt-1">
+                              <p className="text-sm text-black font-medium mt-2">
                                 Enhanced: {resume.enhanced_file_name}
                               </p>
                             )}
@@ -226,6 +284,16 @@ if (loading) {
                               <Calendar size={14} className="mr-1" />
                               {new Date(resume.created_at).toLocaleDateString()}
                             </p>
+                          </div>
+                          <div className="ml-4">
+                            <a
+                              href={resume.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-gray-200 text-black font-bold py-2 px-3 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-gray-300 transition-all transform active:translate-y-1 active:shadow-none shadow-[2px_2px_0px_0px_#000]"
+                            >
+                              <Download size={14} className="transform group-hover:translate-y-0.5 transition-transform" />
+                            </a>
                           </div>
                         </div>
                       </div>
@@ -244,6 +312,14 @@ if (loading) {
           2025
         </div>
       </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <ResumeUpload
+          onUploadSuccess={handleUploadSuccess}
+          onClose={() => setShowUploadModal(false)}
+        />
+      )}
     </div>
   )
 }
