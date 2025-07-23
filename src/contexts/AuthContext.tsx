@@ -8,24 +8,13 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signUp: (
-    email: string,
-    password: string,
-    name?: string
-  ) => Promise<{ error: Error | null; data?: unknown }>
-  signIn: (
-    email: string,
-    password: string
-  ) => Promise<{ error: Error | null }>
-  signInWithMagicLink: (
-    email: string
-  ) => Promise<{ error: Error | null }>
+  signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null; data?: unknown }>
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
-  updateProfile: (
-    name: string,
-    avatarUrl?: string
-  ) => Promise<{ error: Error | string | null }>
+  updateProfile: (name: string, avatarUrl?: string) => Promise<{ error: Error | string | null }>
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -55,64 +44,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [supabase])
 
-  const signUp = async (email: string, password: string, name?: string) => {
+  
+  const signUp = async (
+  email: string,
+  password: string,
+  name?: string
+): Promise<{ error: Error | null; data?: unknown }> => {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          name: name || '',
-        },
+        data: { name: name || '' },
       },
     })
 
-    if (error) {
-      console.error('Sign up error:', error)
-      return { error: error as Error }
+    return {
+      error: error ? (error as Error) : null,
+      data,
     }
-
-    console.log('Sign up successful:', data)
-    return { error: null, data }
   } catch (error) {
-    console.error('Sign up catch error:', error)
-    return { error: error instanceof Error ? error : new Error('Unknown error') }
-  }
-}
-
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      
-      if (error) {
-        return { error }
-      }
-      
-      // Profile should already exist due to RLS and trigger setup
-      return { error: null }
-    } catch (error) {
-  return { error: error instanceof Error ? error : new Error('Unknown error') }
-}
-  }
-
-  const signInWithMagicLink = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
-      return { error }
-    } catch (error) {
-      return { error }
+    return {
+      error: error instanceof Error ? error : new Error('Unknown error'),
     }
   }
+}
+
+
+
+
+  const signIn = async (
+  email: string,
+  password: string
+): Promise<{ error: Error | null }> => {
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    return { error: error ? (error as Error) : null }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error : new Error('Unknown error'),
+    }
+  }
+}
+
+
+
+  const signInWithMagicLink = async (
+  email: string
+): Promise<{ error: Error | null }> => {
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    return { error: error ? (error as Error) : null }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error : new Error('Unknown error'),
+    }
+  }
+}
+
+
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
@@ -121,43 +122,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const updateProfile = async (name: string, avatarUrl?: string) => {
-    try {
-      if (!user) {
-        return { error: 'No user found' }
-      }
+  // const updateProfile = async (name: string, avatarUrl?: string) => {
+  //   try {
+  //     if (!user) {
+  //       return { error: 'No user found' }
+  //     }
 
-      // First try to update the profile
-      const { error: updateError } = await supabase
+  //     // First try to update the profile
+  //     const { error: updateError } = await supabase
+  //       .from('profiles')
+  //       .update({
+  //         name,
+  //         avatar_url: avatarUrl || '',
+  //         updated_at: new Date().toISOString()
+  //       })
+  //       .eq('id', user.id)
+
+  //     // If the update failed because the profile doesn't exist, create it
+  //     if (updateError && updateError.code === 'PGRST116') {
+  //       const { error: insertError } = await supabase
+  //         .from('profiles')
+  //         .insert({
+  //           id: user.id,
+  //           name,
+  //           avatar_url: avatarUrl || '',
+  //           created_at: new Date().toISOString(),
+  //           updated_at: new Date().toISOString()
+  //         })
+        
+  //       return { error: insertError }
+  //     }
+
+  //     return { error: updateError }
+  //   } catch (error) {
+  //     console.error('Profile update error:', error)
+  //     return { error }
+  //   }
+  // }
+
+  const updateProfile = async (
+  name: string,
+  avatarUrl?: string
+): Promise<{ error: Error | string | null }> => {
+  try {
+    if (!user) return { error: 'No user found' }
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        name,
+        avatar_url: avatarUrl || '',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id)
+
+    if (updateError?.code === 'PGRST116') {
+      const { error: insertError } = await supabase
         .from('profiles')
-        .update({
+        .insert({
+          id: user.id,
           name,
           avatar_url: avatarUrl || '',
-          updated_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id)
 
-      // If the update failed because the profile doesn't exist, create it
-      if (updateError && updateError.code === 'PGRST116') {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            name,
-            avatar_url: avatarUrl || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-        
-        return { error: insertError }
-      }
+      return { error: insertError ? (insertError as Error) : null }
+    }
 
-      return { error: updateError }
-    } catch (error) {
-      console.error('Profile update error:', error)
-      return { error }
+    return { error: updateError ? (updateError as Error) : null }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error : new Error('Unknown error'),
     }
   }
+}
+
 
   const value = {
     user,
