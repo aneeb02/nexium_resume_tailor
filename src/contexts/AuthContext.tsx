@@ -56,31 +56,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   const signUp = async (email: string, password: string, name?: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            name: name || '',
-          },
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          name: name || '',
         },
-      })
+      },
+    })
 
-      if (error) {
-        console.error('Sign up error:', error)
-        return { error }
-      }
-
-      console.log('Sign up successful:', data)
-      // Profile is automatically created by the database trigger
-      return { error: null, data }
-    } catch (error) {
-      console.error('Sign up catch error:', error)
-      return { error }
+    if (error) {
+      console.error('Sign up error:', error)
+      return { error: error as Error }
     }
+
+    console.log('Sign up successful:', data)
+    return { error: null, data }
+  } catch (error) {
+    console.error('Sign up catch error:', error)
+    return { error: error instanceof Error ? error : new Error('Unknown error') }
   }
+}
+
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -96,8 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Profile should already exist due to RLS and trigger setup
       return { error: null }
     } catch (error) {
-      return { error }
-    }
+  return { error: error instanceof Error ? error : new Error('Unknown error') }
+}
   }
 
   const signInWithMagicLink = async (email: string) => {
