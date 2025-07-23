@@ -8,11 +8,23 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
-  signInWithMagicLink: (email: string) => Promise<{ error: any }>
+  signUp: (
+    email: string,
+    password: string,
+    name?: string
+  ) => Promise<{ error: Error | null; data?: unknown }>
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: Error | null }>
+  signInWithMagicLink: (
+    email: string
+  ) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
-  updateProfile: (name: string, avatarUrl?: string) => Promise<{ error: any }>
+  updateProfile: (
+    name: string,
+    avatarUrl?: string
+  ) => Promise<{ error: Error | string | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)

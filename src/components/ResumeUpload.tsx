@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Upload, FileText, X, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle } from 'lucide-react'
 
 interface ResumeUploadProps {
-  onUploadSuccess: (resume: any) => void
+  onUploadSuccess: (resume: Record<string, unknown>) => void
   onClose: () => void
 }
 

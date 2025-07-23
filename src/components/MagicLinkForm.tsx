@@ -29,7 +29,7 @@ export function MagicLinkForm({ onBackToAuth }: MagicLinkFormProps) {
       } else {
         setSuccess(true)
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -57,7 +57,7 @@ export function MagicLinkForm({ onBackToAuth }: MagicLinkFormProps) {
                 Magic Link Sent!
               </h2>
               <p className="text-center text-gray-500 mb-4">
-                We've sent a magic link to <span className="font-medium text-orange-600">{email}</span>
+                We sent a magic link to <span className="font-medium text-orange-600">{email}</span>
               </p>
               <p className="text-center text-gray-500">
                 Click the link in the email to sign in to your account.
@@ -113,9 +113,8 @@ export function MagicLinkForm({ onBackToAuth }: MagicLinkFormProps) {
           <h2 className="text-3xl font-bold text-center mb-2">
             Sign in with Magic Link
           </h2>
-          <p className="text-center text-gray-500 mb-8">
-            Enter your email and we'll send you a magic link to sign in
-          </p>
+          <p>Enter your email and we&apos;ll send you a magic link to sign in</p>
+
 
           {/* Error Message */}
           {error && (
