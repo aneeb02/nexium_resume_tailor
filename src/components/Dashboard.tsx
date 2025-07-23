@@ -12,7 +12,7 @@ interface Profile {
   avatar_url: string
 }
 
-interface Resume {
+export interface Resume {
   id: number
   user_id: string
   original_file_name: string

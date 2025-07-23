@@ -2,9 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { Upload, FileText, X, AlertCircle } from 'lucide-react'
+import type { Resume } from './Dashboard'
 
 interface ResumeUploadProps {
-  onUploadSuccess: (resume: Record<string, unknown>) => void
+  onUploadSuccess: (resume: Resume) => void
   onClose: () => void
 }
 
