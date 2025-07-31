@@ -71,9 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 }
 
-
-
-
   const signIn = async (
   email: string,
   password: string
