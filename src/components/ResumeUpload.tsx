@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Upload, FileText, X, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle } from 'lucide-react'
+import type { Resume } from './Dashboard'
 
 interface ResumeUploadProps {
-  onUploadSuccess: (resume: any) => void
+  onUploadSuccess: (resume: Resume) => void
   onClose: () => void
 }
 

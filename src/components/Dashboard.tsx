@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/utils/supabase/client'
 import { ResumeUpload } from './ResumeUpload'
-import { User, Mail, FileText, Edit2, Save, X, Calendar, LogOut, Upload, Download } from 'lucide-react'
+import { User, Mail, FileText, Edit2, Save, X, Calendar, LogOut, Upload, Download, Brain, Loader2, Eye, Sparkles } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -12,7 +13,7 @@ interface Profile {
   avatar_url: string
 }
 
-interface Resume {
+export interface Resume {
   id: number
   user_id: string
   original_file_name: string
@@ -24,9 +25,24 @@ interface Resume {
   job_description?: string
   status: string
   created_at: string
+  analysis_result?: {
+    overall_fit_rating: number
+    candidate_strengths: string[]
+    candidate_weaknesses: string[]
+    risk_factor: string
+    reward_factor?: {
+      level: string
+      scenario: string
+      fit_duration: string
+    }
+    justification: string
+  }
+  analyzed_at?: string
+  enhanced_resume_text?: string
 }
 
 export function Dashboard() {
+  const router = useRouter()
   const { user, signOut, updateProfile } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [resumes, setResumes] = useState<Resume[]>([])
@@ -34,6 +50,7 @@ export function Dashboard() {
   const [editingProfile, setEditingProfile] = useState(false)
   const [newName, setNewName] = useState('')
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [analyzingResumeId, setAnalyzingResumeId] = useState<number | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -118,6 +135,52 @@ export function Dashboard() {
   const handleUploadSuccess = (newResume: Resume) => {
     setResumes(prev => [newResume, ...prev])
     setShowUploadModal(false)
+  }
+
+  const handleAnalyze = async (resumeId: number) => {
+    setAnalyzingResumeId(resumeId)
+    
+    try {
+      const response = await fetch('/api/analyze-resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ resume_id: resumeId }),
+      })
+
+      const result = await response.json()
+      console.log(result.analysis)
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Analysis failed')
+      }
+
+      // Update the resume in the local state with analysis result
+      setResumes(prev => prev.map(resume => 
+        resume.id === resumeId 
+          ? { 
+              ...resume, 
+              status: 'analyzed',
+              analysis_result: result.analysis,
+              analyzed_at: new Date().toISOString()
+            }
+          : resume
+      ))
+
+    } catch (error) {
+      console.error('Analysis error:', error)
+      alert(error instanceof Error ? error.message : 'Analysis failed')
+      
+      // Reset status back to uploaded on error
+      setResumes(prev => prev.map(resume => 
+        resume.id === resumeId 
+          ? { ...resume, status: 'uploaded' }
+          : resume
+      ))
+    } finally {
+      setAnalyzingResumeId(null)
+    }
   }
 
 if (loading) {
@@ -285,17 +348,103 @@ if (loading) {
                               {new Date(resume.created_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="ml-4">
+                          <div className="ml-4 flex space-x-2">
+                            {/* View Analysis Button - Only show if analyzed */}
+                            {resume.status === 'analyzed' && resume.analysis_result && (
+                              <button
+                                onClick={() => router.push(`/analysis/${resume.id}`)}
+                                className="bg-green-500 text-white font-bold py-2 px-3 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-green-600 transition-all transform active:translate-y-1 active:shadow-none shadow-[2px_2px_0px_0px_#000]"
+                                title="View Analysis"
+                              >
+                                <Eye size={14} className="transform group-hover:translate-y-0.5 transition-transform" />
+                              </button>
+                            )}
+                            
+                            {/* Analyze Button - Only show if uploaded */}
+                            {resume.status === 'uploaded' && (
+                              <button
+                                onClick={() => handleAnalyze(resume.id)}
+                                disabled={analyzingResumeId === resume.id}
+                                className="bg-blue-500 text-white font-bold py-2 px-3 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-blue-600 transition-all transform active:translate-y-1 active:shadow-none shadow-[2px_2px_0px_0px_#000] disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Analyze Resume"
+                              >
+                                {analyzingResumeId === resume.id ? (
+                                  <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                  <Brain size={14} className="transform group-hover:translate-y-0.5 transition-transform" />
+                                )}
+                              </button>
+                            )}
+                            
+                            {/* Enhanced Resume Download Button - Only show if analyzed and enhanced resume exists */}
+                            {resume.status === 'analyzed' && resume.enhanced_resume_text && (
+                              <a
+                                href={`/api/download-enhanced-resume/${resume.id}`}
+                                className="bg-purple-500 text-white font-bold py-2 px-3 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-purple-600 transition-all transform active:translate-y-1 active:shadow-none shadow-[2px_2px_0px_0px_#000]"
+                                title="Download Enhanced Resume"
+                              >
+                                <Sparkles size={14} className="transform group-hover:translate-y-0.5 transition-transform" />
+                              </a>
+                            )}
+                            
+                            {/* Download Original Button */}
                             <a
                               href={resume.file_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="bg-gray-200 text-black font-bold py-2 px-3 rounded-lg border-2 border-black flex items-center justify-center group hover:bg-gray-300 transition-all transform active:translate-y-1 active:shadow-none shadow-[2px_2px_0px_0px_#000]"
+                              title="Download Original Resume"
                             >
                               <Download size={14} className="transform group-hover:translate-y-0.5 transition-transform" />
                             </a>
                           </div>
                         </div>
+                        
+                        {/* Analysis Results Preview */}
+                        {resume.status === 'analyzed' && resume.analysis_result && (
+                          <div className="mt-4 pt-4 border-t-2 border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                {/* Score */}
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-black">Score:</span>
+                                  <div className={`px-3 py-1 rounded-full border-2 border-black font-bold text-sm ${
+                                    resume.analysis_result.overall_fit_rating >= 8 ? 'bg-green-200' :
+                                    resume.analysis_result.overall_fit_rating >= 6 ? 'bg-yellow-200' :
+                                    'bg-red-200'
+                                  }`}>
+                                    {resume.analysis_result.overall_fit_rating}/10
+                                  </div>
+                                </div>
+                                
+                                {/* Risk */}
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium text-black">Risk:</span>
+                                  <div className={`px-2 py-1 rounded border-2 border-black text-xs font-bold ${
+                                    resume.analysis_result.risk_factor === 'Low' ? 'bg-green-100' :
+                                    resume.analysis_result.risk_factor === 'Medium' ? 'bg-yellow-100' :
+                                    'bg-red-100'
+                                  }`}>
+                                    {resume.analysis_result.risk_factor}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* View Full Analysis Link */}
+                              <button
+                                onClick={() => router.push(`/analysis/${resume.id}`)}
+                                className="text-orange-500 hover:text-orange-600 font-medium text-sm underline"
+                              >
+                                View Full Analysis →
+                              </button>
+                            </div>
+                            
+                            <div className="text-xs text-gray-500 flex items-center mt-2">
+                              <Calendar size={12} className="mr-1" />
+                              Analyzed on {new Date(resume.analyzed_at!).toLocaleDateString()}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

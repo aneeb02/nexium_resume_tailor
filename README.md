@@ -1,39 +1,81 @@
-# Next.js + Supabase Authentication System
+# Nexium Resume Tailor - AI-Powered Resume Analysis & Enhancement Platform
 
-This project implements a complete authentication system using Next.js 15 with TypeScript and Supabase. It includes user registration, login, profile management, and data integration with your custom database schema.
+Nexium Resume Tailor is a comprehensive AI-powered platform built with Next.js 15, TypeScript, and Supabase that helps job seekers optimize their resumes for specific positions. The platform analyzes resumes against job descriptions using advanced AI models, provides detailed feedback, and generates enhanced versions to improve job application success rates.
 
-## Features
+## 🚀 Core Features
 
-- ✅ **User Registration & Login** - Sign up/sign in with email and password
-- ✅ **Magic Link Authentication** - Passwordless sign-in with email magic links
-- ✅ **Profile Management** - Users can update their profile information
-- ✅ **Protected Routes** - Authentication-based page access
-- ✅ **Dashboard** - User dashboard with profile and resume management
-- ✅ **Database Integration** - Works with your `profiles` and `resumes` tables
-- ✅ **Responsive Design** - Mobile-friendly UI with Tailwind CSS
-- ✅ **TypeScript** - Full type safety throughout the application
-- ✅ **SSR Support** - Server-side rendering with Supabase SSR
+### **AI-Powered Resume Analysis**
 
-## Database Schema
+- ✅ **Smart Resume Analysis** - AI evaluation of resume-job fit with 1-10 scoring
+- ✅ **Detailed Feedback** - Comprehensive strengths, weaknesses, and improvement suggestions
+- ✅ **Risk Assessment** - Low/Medium/High risk analysis for hiring decisions
+- ✅ **Reward Potential** - Best-case scenario projections and fit duration estimates
+- ✅ **Job Description Matching** - Tailored analysis based on specific job requirements
+- ✅ **Enhanced Resume Generation** - AI-optimized resume versions for better ATS compatibility
 
-The application works with your existing database schema:
+### **File Management & Processing**
+
+- ✅ **Multi-Format Support** - PDF and DOCX resume upload with validation
+- ✅ **Secure File Storage** - Supabase Storage integration with user-isolated file management
+- ✅ **Document Processing** - Intelligent text extraction and content analysis
+- ✅ **Download Options** - Access both original and AI-enhanced resume versions
+
+### **User Experience & Authentication**
+
+- ✅ **Secure Authentication** - Email/password and magic link sign-in options
+- ✅ **User Dashboard** - Centralized resume management and analysis history
+- ✅ **Real-time Status** - Live updates on analysis progress and completion
+- ✅ **Responsive Design** - Modern, mobile-friendly interface with custom styling
+- ✅ **Profile Management** - User account settings and preferences
+
+### **Technical Excellence**
+
+- ✅ **TypeScript** - Full type safety and enhanced developer experience
+- ✅ **Next.js 15** - Latest React framework with App Router and SSR
+- ✅ **Supabase Integration** - Real-time database, authentication, and storage
+- ✅ **External AI Pipeline** - n8n workflow integration for AI processing
+- ✅ **Row Level Security** - Database-level security policies for data protection
+
+## 📊 Database Schema
+
+The platform uses a comprehensive database schema optimized for AI-powered resume analysis:
 
 ```sql
--- Profiles table (linked to Supabase auth.users)
+-- User Profiles (extends Supabase auth.users)
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT,
-  avatar_url TEXT
+  avatar_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Resumes table
+-- Resume Storage and Analysis Results
 CREATE TABLE resumes (
   id SERIAL PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  original_file_name VARCHAR(255),
+
+  -- File Management
+  original_file_name VARCHAR(255) NOT NULL,
   enhanced_file_name VARCHAR(255),
+  storage_path TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  file_type VARCHAR(100) NOT NULL,
+
+  -- Job Context
   job_description TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
+
+  -- Processing Status
+  status VARCHAR(50) DEFAULT 'uploaded' CHECK (status IN ('uploaded', 'analyzing', 'analyzed', 'error')),
+
+  -- AI Analysis Results (JSONB for flexible schema)
+  analysis_result JSONB,
+  enhanced_resume_text TEXT,
+
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT NOW(),
+  analyzed_at TIMESTAMP
 );
 ```
 
@@ -66,9 +108,10 @@ src/
 ### 1. Environment Variables
 
 Your `.env.local` file is already configured with:
+
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://auwwkuubfmjofboqjxqk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
 ```
 
 ### 2. Supabase Configuration
@@ -143,24 +186,13 @@ npm run dev
 
 The application will be available at `http://localhost:3000`
 
-## How to Use
-
-### 1. **Authentication Flow**
-
-- Visit the homepage - you'll see a welcome screen if not logged in
-- Click "Sign In / Sign Up" to go to the authentication page
-- You can toggle between login and signup modes
-- **Magic Link Option**: On the sign-in page, click "Sign in with Magic Link" for passwordless authentication
-- After successful signup, users receive a confirmation email
-- After login (or clicking magic link), users are redirected to their dashboard
-
-### 2. **Dashboard Features**
+### 1. **Dashboard Features**
 
 - **Profile Management**: Update your name and view account details
 - **Resume Management**: View all your uploaded resumes (integrated with your existing `resumes` table)
 - **Sign Out**: Securely logout from the application
 
-### 3. **Protected Routes**
+### 2. **Protected Routes**
 
 - The home page shows the dashboard only for authenticated users
 - Unauthenticated users see a welcome screen with login prompt
@@ -169,22 +201,26 @@ The application will be available at `http://localhost:3000`
 ## Key Components Explained
 
 ### AuthContext
+
 - Manages authentication state across the application
 - Handles login, signup, logout, and profile updates
 - Automatically creates profiles for new users
 
 ### AuthForm
+
 - Reusable form component for login/signup
 - Includes validation and error handling
 - Clean, responsive design
 
 ### Dashboard
+
 - Shows user profile information
 - Displays user's resumes from the database
 - Allows profile editing
 - Secure logout functionality
 
 ### Middleware
+
 - Handles authentication state on every request
 - Refreshes user sessions automatically
 - Protects routes and maintains security
@@ -206,29 +242,3 @@ You can easily extend this system by:
 3. **Adding social login** (Google, GitHub, etc.)
 4. **Implementing email verification** flows
 5. **Adding password reset** functionality
-
-## Troubleshooting
-
-1. **Authentication not working?**
-   - Check your Supabase URL and keys in `.env.local`
-   - Verify email authentication is enabled in Supabase
-
-2. **Database errors?**
-   - Ensure RLS policies are correctly set up
-   - Check that your tables exist and have proper permissions
-
-3. **Build errors?**
-   - Run `npm install` to ensure all dependencies are installed
-   - Check TypeScript errors in your editor
-
-## Next Steps
-
-With this authentication system in place, you can now:
-
-1. **Add file upload functionality** for resumes
-2. **Implement AI-powered resume enhancement** using your preferred AI service
-3. **Add email templates** for user notifications
-4. **Create admin panels** for managing users and resumes
-5. **Add analytics** to track user activity
-
-The foundation is solid and ready for your specific business logic!
